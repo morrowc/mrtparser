@@ -1,0 +1,16 @@
+repos:
+- repo: https://github.com/pre-commit/mirrors-clang-format
+  # Use the sha / tag you want to point at
+  rev: 'v20.1.8'  # Replace with the desired clang-format version
+  hooks:
+  - id: clang-format
+    args: ['-i']  # Apply formatting in-place
+    types: [ c, c++ ] # Targets files for C/C++ languages
+    # Optionally, exclude files or directories
+    # exclude: ^(build/|third_party/)
+    # Optionally, specify the clang-format style
+    # You can either define this in a .clang-format file at your repo root
+    # or pass it as an argument here.
+    # args: ["-i", "-style=Google"]
+
+
