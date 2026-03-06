@@ -56,12 +56,40 @@ struct BgpHeader {
   BgpMessageType type;
 };
 
+struct BgpPrefix {
+  uint32_t path_id;  // RFC 8050 Add-Path
+  uint8_t length;
+  std::vector<uint8_t> prefix;
+  bool has_path_id;
+
+  BgpPrefix() : path_id(0), length(0), has_path_id(false) {}
+};
+
+struct BgpOpenMessage {
+  uint8_t version;
+  uint32_t my_as;
+  uint16_t hold_time;
+  uint32_t bgp_id;
+  std::vector<uint8_t> optional_parameters;
+};
+
+struct BgpUpdateMessage {
+  std::vector<BgpPrefix> withdrawn_routes;
+  std::vector<BgpAttribute> attributes;
+  std::vector<BgpPrefix> nlri;
+};
+
 class BgpParser {
  public:
   static bool parseMessage(const uint8_t *buffer, size_t size,
                            BgpHeader &header, std::vector<uint8_t> &payload);
   static bool parseAttributes(const uint8_t *buffer, size_t size,
                               std::vector<BgpAttribute> &attributes);
+  static bool parseUpdate(const uint8_t *payload, size_t size,
+                          BgpUpdateMessage &update, bool has_add_path = false);
+  static bool parsePrefixes(const uint8_t *buffer, size_t size,
+                            std::vector<BgpPrefix> &prefixes,
+                            bool has_add_path = false);
 };
 
 }  // namespace bgp

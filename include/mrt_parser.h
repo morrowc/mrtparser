@@ -103,6 +103,7 @@ class MrtRecord {
   // Specialized data
   std::unique_ptr<PeerIndexTable> peer_index_table;
   std::unique_ptr<RibRecord> rib_record;
+  std::unique_ptr<bgp::BgpUpdateMessage> bgp_update;
 
   MrtRecord() : microsecond_timestamp(0), has_et(false) {}
 };

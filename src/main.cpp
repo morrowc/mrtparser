@@ -60,7 +60,35 @@ int main(int argc, char *argv[]) {
           std::cout << "    BGP Type: " << (int)bgpHeader.type
                     << " (Length: " << bgpHeader.length << ")" << std::endl;
           if (bgpHeader.type == bgp::BgpMessageType::UPDATE) {
-            // Further update parsing...
+            bgp::BgpUpdateMessage update;
+            bool has_add_path =
+                (record.header.subtype ==
+                     (uint16_t)mrt::Bgp4mpSubtype::BGP4MP_MESSAGE_AS4_ADDPATH ||
+                 record.header.subtype ==
+                     (uint16_t)
+                         mrt::Bgp4mpSubtype::BGP4MP_MESSAGE_AS4_LOCAL_ADDPATH);
+
+            if (bgp::BgpParser::parseUpdate(bgpPayload.data(),
+                                            bgpPayload.size(), update,
+                                            has_add_path)) {
+              if (!update.withdrawn_routes.empty())
+                std::cout << "      Withdrawn: "
+                          << update.withdrawn_routes.size() << " routes"
+                          << std::endl;
+              std::cout << "      Attributes: " << update.attributes.size()
+                        << std::endl;
+              if (!update.nlri.empty())
+                std::cout << "      NLRI: " << update.nlri.size() << " prefixes"
+                          << std::endl;
+
+              for (const auto &prefix : update.nlri) {
+                std::cout << "        Prefix: " << (int)prefix.length
+                          << " bits";
+                if (prefix.has_path_id)
+                  std::cout << " (PathId: " << prefix.path_id << ")";
+                std::cout << std::endl;
+              }
+            }
           }
         }
       }

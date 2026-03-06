@@ -1,0 +1,44 @@
+name: CMake
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake g++ libbz2-dev zlib1g-dev lcov libgtest-dev
+
+    - name: Configure CMake
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=ON
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build --config Debug
+
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      run: ctest -C Debug --output-on-failure
+
+    - name: Generate Coverage
+      working-directory: ${{github.workspace}}/build
+      run: |
+        make coverage
+        # You could upload to Codecov here if desired
+        # uses: codecov/codecov-action@v3
+        # with:
+        #   files: build/coverage.info
+
+    - name: Upload Coverage Report
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: build/coverage_report/
