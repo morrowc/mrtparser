@@ -1,8 +1,9 @@
-#include "bgp_parser.h"
-#include "mrt_parser.h"
+#include <arpa/inet.h>
 #include <iomanip>
 #include <iostream>
 #include <vector>
+#include "bgp_parser.h"
+#include "mrt_parser.h"
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
@@ -29,7 +30,6 @@ int main(int argc, char *argv[]) {
     // Basic BGP message parsing if it's BGP4MP
     if (record.header.type == (uint16_t)mrt::MrtType::BGP4MP ||
         record.header.type == (uint16_t)mrt::MrtType::BGP4MP_ET) {
-
       size_t bgp_offset = 0;
       // BGP4MP Common Header: Peer AS (2 or 4), Local AS (2 or 4), Interface
       // Index (2), Address Family (2) Plus Peer IP and Local IP (variable)
@@ -43,13 +43,13 @@ int main(int argc, char *argv[]) {
            record.header.subtype ==
                (uint16_t)mrt::Bgp4mpSubtype::BGP4MP_MESSAGE_AS4_LOCAL_ADDPATH);
 
-      bgp_offset += (is_as4 ? 8 : 4); // Peer AS + Local AS
-      bgp_offset += 2;                // Interface Index
+      bgp_offset += (is_as4 ? 8 : 4);  // Peer AS + Local AS
+      bgp_offset += 2;                 // Interface Index
       uint16_t afi = ntohs(*(uint16_t *)(record.message.data() + bgp_offset));
       bgp_offset += 2;
 
       size_t ip_len = (afi == 1 ? 4 : 16);
-      bgp_offset += (ip_len * 2); // Peer IP + Local IP
+      bgp_offset += (ip_len * 2);  // Peer IP + Local IP
 
       if (bgp_offset < record.message.size()) {
         bgp::BgpHeader bgpHeader;
@@ -83,8 +83,7 @@ int main(int argc, char *argv[]) {
     }
 
     std::cout << std::endl;
-    if (recordCount >= 5)
-      break; // Limit for now
+    if (recordCount >= 5) break;  // Limit for now
   }
 
   return 0;

@@ -4,27 +4,44 @@ project(mrtparser CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Coverage options
+option(ENABLE_COVERAGE "Enable coverage reporting" ON)
+
+if(ENABLE_COVERAGE)
+    add_compile_options(--coverage -O0 -g)
+    add_link_options(--coverage)
+endif()
+
 # Find dependencies
 find_package(BZip2 REQUIRED)
 find_package(ZLIB REQUIRED)
 
 include_directories(include)
 
-# Main executable
-add_executable(mrtparser
-    src/main.cpp
+# Library target for shared code
+add_library(mrtparser_lib
     src/mrt_parser.cpp
     src/bgp_parser.cpp
 )
+target_link_libraries(mrtparser_lib BZip2::BZip2 ZLIB::ZLIB)
 
-target_link_libraries(mrtparser
-    BZip2::BZip2
-    ZLIB::ZLIB
-)
+# Main executable
+add_executable(mrtparser src/main.cpp)
+target_link_libraries(mrtparser mrtparser_lib)
 
-# Optional: Add tests if gtest is found
-# find_package(GTest)
-# if(GTEST_FOUND)
-#     enable_testing()
-#     add_subdirectory(tests)
-# endif()
+# Tests
+enable_testing()
+find_package(GTest REQUIRED)
+add_executable(mrtparser_test tests/mrt_parser_test.cpp)
+target_link_libraries(mrtparser_test mrtparser_lib GTest::gtest_main)
+add_test(NAME mrt_test COMMAND mrtparser_test)
+
+if(ENABLE_COVERAGE)
+    add_custom_target(coverage
+        COMMAND lcov --ignore-errors inconsistent --capture --directory . --output-file coverage.info
+        COMMAND lcov --ignore-errors inconsistent --remove coverage.info '/usr/*' '*/tests/*' --output-file coverage.info
+        COMMAND genhtml --ignore-errors inconsistent coverage.info --output-directory coverage_report
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Generating coverage report"
+    )
+endif()
