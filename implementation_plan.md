@@ -52,3 +52,4 @@ Command-line interface to:
 - **IANA Mappings:** Map numeric BGP attribute types and BGP message types to their descriptive names (e.g., `NEXT_HOP`, `UPDATE`).
 - **Community Normalization:** Parse BGP `COMMUNITIES` attribute into `AS:VALUE` format (e.g., `65532:12345`).
 - **Multi-file Support:** Process one or more files (or globs expanded by shell) provided as command-line arguments.
+- **CI/CD Fix:** Update `lcov` flags in `CMakeLists.txt` for compatibility with GitHub Actions runners (version 1.15+).

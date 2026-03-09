@@ -25,3 +25,5 @@
   - [x] Implement human-readable NLRI display
   - [x] Configure test coverage (lcov) and GoogleTest
   - [x] Expand test suite for edge cases
+- [x] CI/CD Fix
+  - [x] Fix lcov compatibility flags in CMakeLists.txt

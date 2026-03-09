@@ -37,10 +37,18 @@ target_link_libraries(mrtparser_test mrtparser_lib GTest::gtest_main)
 add_test(NAME mrt_test COMMAND mrtparser_test)
 
 if(ENABLE_COVERAGE)
+    # Check lcov version for compatibility flags
+    execute_process(COMMAND lcov --version OUTPUT_VARIABLE LCOV_VERSION_STR)
+    if(LCOV_VERSION_STR MATCHES "version 2")
+        set(LCOV_FLAGS "--ignore-errors" "inconsistent,gcov,source,graph")
+    else()
+        set(LCOV_FLAGS "--ignore-errors" "gcov,source,graph")
+    endif()
+
     add_custom_target(coverage
-        COMMAND lcov --ignore-errors inconsistent --capture --directory . --output-file coverage.info
-        COMMAND lcov --ignore-errors inconsistent --remove coverage.info '/usr/*' '*/tests/*' --output-file coverage.info
-        COMMAND genhtml --ignore-errors inconsistent coverage.info --output-directory coverage_report
+        COMMAND lcov ${LCOV_FLAGS} --capture --directory . --output-file coverage.info
+        COMMAND lcov ${LCOV_FLAGS} --remove coverage.info '/usr/*' '*/tests/*' --output-file coverage.info
+        COMMAND genhtml ${LCOV_FLAGS} coverage.info --output-directory coverage_report
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         COMMENT "Generating coverage report"
     )
