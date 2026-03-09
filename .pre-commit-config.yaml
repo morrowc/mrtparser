@@ -13,4 +13,9 @@ repos:
     # or pass it as an argument here.
     # args: ["-i", "-style=Google"]
 
+- repo: https://github.com/doublify/pre-commit-rust
+  rev: v1.0
+  hooks:
+  - id: fmt
+
 
