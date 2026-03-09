@@ -37,6 +37,7 @@ I have implemented a comprehensive C++ MRT parser that supports key RFCs (6396, 
 - **Flexible Output Formatting:**
   - **UTC Timestamps:** Introduced the `--utc` flag for human-readable time conversion.
   - **Single-line Mode:** Added the `--single-line` flag for compact, grep-friendly output.
+- **Community Normalization:** Standardized 4-byte BGP communities into the `AS:VALUE` format for improved readability.
 - **Multi-file Support:** Refactored the CLI to process multiple input files and globs in a single run.
 
 ## Verification Results

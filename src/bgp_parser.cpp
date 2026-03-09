@@ -187,6 +187,17 @@ bool BgpParser::decodeMpUnreachNlri(const std::vector<uint8_t> &value,
                        mp_unreach.withdrawn_routes, has_add_path);
 }
 
+bool BgpParser::decodeCommunities(const std::vector<uint8_t> &value,
+                                  std::vector<std::string> &communities) {
+  if (value.size() % 4 != 0) return false;
+  for (size_t i = 0; i < value.size(); i += 4) {
+    uint16_t as = ntohs(*(uint16_t *)(value.data() + i));
+    uint16_t val = ntohs(*(uint16_t *)(value.data() + i + 2));
+    communities.push_back(std::to_string(as) + ":" + std::to_string(val));
+  }
+  return true;
+}
+
 std::string BgpParser::originToString(uint8_t origin) {
   switch (origin) {
     case 0:

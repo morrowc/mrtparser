@@ -125,6 +125,8 @@ class BgpParser {
   static bool decodeMpUnreachNlri(const std::vector<uint8_t> &value,
                                   BgpMpUnreachNlri &mp_unreach,
                                   bool has_add_path = false);
+  static bool decodeCommunities(const std::vector<uint8_t> &value,
+                                std::vector<std::string> &communities);
   static std::string originToString(uint8_t origin);
   static std::string attributeTypeToName(uint8_t type);
   static std::string messageTypeToName(uint8_t type);

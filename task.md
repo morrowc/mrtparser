@@ -18,6 +18,7 @@
   - [x] Map BGP message type numbers to names (IANA)
   - [x] Map MRT type and subtype numbers to names (IANA)
   - [x] Support multiple files on the command line
+  - [x] Parse and normalize BGP communities (AS:VALUE)
 - [x] Verification and Testing
   - [x] Basic parsing verification
   - [x] Fix compilation errors (missing includes)

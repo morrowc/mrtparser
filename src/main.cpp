@@ -226,6 +226,18 @@ int main(int argc, char *argv[]) {
                            << bgp::BgpParser::prefixToString(
                                   p, mp_unreach.afi == 2);
                     }
+                  } else if (attr.type == bgp::BgpAttributeType::COMMUNITIES) {
+                    std::vector<std::string> communities;
+                    if (bgp::BgpParser::decodeCommunities(attr.value,
+                                                          communities)) {
+                      ss << (singleLine ? "=" : " COMMUNITIES=");
+                      for (size_t i = 0; i < communities.size(); ++i) {
+                        ss << communities[i]
+                           << (i == communities.size() - 1 ? "" : " ");
+                      }
+                    } else if (singleLine) {
+                      ss << "[len=" << attr.value.size() << "]";
+                    }
                   } else if (singleLine) {
                     ss << "[len=" << attr.value.size() << "]";
                   }
