@@ -45,3 +45,6 @@ Provide an MRT file (e.g., standard, gzip, or bzip2 compressed) as an argument:
 ```bash
 ./build/mrtparser testdata/updates.20260222.1530.bz2
 ```
+This produces multi-line output with unix-epoch seconds timestamps.
+To view updates as a single line: `--single-line`.
+To view updates with human readable timestamps: `--utc`.
