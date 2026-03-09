@@ -50,8 +50,14 @@ fn process_file(filename: &str, args: &Args) -> io::Result<()> {
 
         if args.single_line {
             output.push_str(&format!("Record {}: ", record_count));
-            output.push_str(&format!("Timestamp: {} ", format_timestamp(record.header.timestamp, args.utc)));
-            output.push_str(&format!("Type: {} ", MrtRecord::type_to_string(record.header.mrt_type)));
+            output.push_str(&format!(
+                "Timestamp: {} ",
+                format_timestamp(record.header.timestamp, args.utc)
+            ));
+            output.push_str(&format!(
+                "Type: {} ",
+                MrtRecord::type_to_string(record.header.mrt_type)
+            ));
             output.push_str(&format!(
                 "Subtype: {} ",
                 MrtRecord::subtype_to_string(record.header.mrt_type, record.header.subtype)
@@ -62,8 +68,14 @@ fn process_file(filename: &str, args: &Args) -> io::Result<()> {
             }
         } else {
             output.push_str(&format!("Record {}:\n", record_count));
-            output.push_str(&format!("  Timestamp: {}\n", format_timestamp(record.header.timestamp, args.utc)));
-            output.push_str(&format!("  Type:      {}\n", MrtRecord::type_to_string(record.header.mrt_type)));
+            output.push_str(&format!(
+                "  Timestamp: {}\n",
+                format_timestamp(record.header.timestamp, args.utc)
+            ));
+            output.push_str(&format!(
+                "  Type:      {}\n",
+                MrtRecord::type_to_string(record.header.mrt_type)
+            ));
             output.push_str(&format!(
                 "  Subtype:   {}\n",
                 MrtRecord::subtype_to_string(record.header.mrt_type, record.header.subtype)
@@ -75,7 +87,8 @@ fn process_file(filename: &str, args: &Args) -> io::Result<()> {
         }
 
         // BGP4MP Handling
-        if record.header.mrt_type == MrtType::Bgp4mp || record.header.mrt_type == MrtType::Bgp4mpEt {
+        if record.header.mrt_type == MrtType::Bgp4mp || record.header.mrt_type == MrtType::Bgp4mpEt
+        {
             let subtype = Bgp4mpSubtype::from(record.header.subtype);
             let is_as4 = matches!(
                 subtype,
@@ -97,15 +110,22 @@ fn process_file(filename: &str, args: &Args) -> io::Result<()> {
             if record.data.len() >= offset + 2 {
                 use byteorder::{BigEndian, ReadBytesExt};
                 use std::io::Cursor;
-                let afi = Cursor::new(&record.data[offset..offset + 2]).read_u16::<BigEndian>().unwrap_or(0);
+                let afi = Cursor::new(&record.data[offset..offset + 2])
+                    .read_u16::<BigEndian>()
+                    .unwrap_or(0);
                 offset += 2;
                 let ip_len = if afi == 1 { 4 } else { 16 };
                 offset += ip_len * 2;
 
                 if record.data.len() > offset {
-                    if let Ok(Some((bgp_header, payload))) = BgpParser::parse_message(&record.data[offset..]) {
+                    if let Ok(Some((bgp_header, payload))) =
+                        BgpParser::parse_message(&record.data[offset..])
+                    {
                         if args.single_line {
-                            output.push_str(&format!("BGPType: {} ", BgpParser::message_type_to_name(&bgp_header.msg_type)));
+                            output.push_str(&format!(
+                                "BGPType: {} ",
+                                BgpParser::message_type_to_name(&bgp_header.msg_type)
+                            ));
                         } else {
                             output.push_str(&format!(
                                 "    BGP Type: {} (Length: {})\n",
@@ -120,34 +140,53 @@ fn process_file(filename: &str, args: &Args) -> io::Result<()> {
                                     if !update.withdrawn_routes.is_empty() {
                                         output.push_str("Withdrawn:");
                                         for p in &update.withdrawn_routes {
-                                            output.push_str(&format!(" {} ", BgpParser::prefix_to_string(p, afi == 2)));
+                                            output.push_str(&format!(
+                                                " {} ",
+                                                BgpParser::prefix_to_string(p, afi == 2)
+                                            ));
                                         }
                                     }
                                     if !update.nlri.is_empty() {
                                         output.push_str("NLRI:");
                                         for p in &update.nlri {
-                                            output.push_str(&format!(" {} ", BgpParser::prefix_to_string(p, afi == 2)));
+                                            output.push_str(&format!(
+                                                " {} ",
+                                                BgpParser::prefix_to_string(p, afi == 2)
+                                            ));
                                         }
                                     }
                                 } else {
                                     if !update.withdrawn_routes.is_empty() {
-                                        output.push_str(&format!("      Withdrawn ({}):", update.withdrawn_routes.len()));
+                                        output.push_str(&format!(
+                                            "      Withdrawn ({}):",
+                                            update.withdrawn_routes.len()
+                                        ));
                                         for p in &update.withdrawn_routes {
-                                            output.push_str(&format!(" {}", BgpParser::prefix_to_string(p, afi == 2)));
+                                            output.push_str(&format!(
+                                                " {}",
+                                                BgpParser::prefix_to_string(p, afi == 2)
+                                            ));
                                         }
                                         output.push_str("\n");
                                     }
                                     if !update.nlri.is_empty() {
-                                        output.push_str(&format!("      NLRI ({}):", update.nlri.len()));
+                                        output.push_str(&format!(
+                                            "      NLRI ({}):",
+                                            update.nlri.len()
+                                        ));
                                         for p in &update.nlri {
-                                            output.push_str(&format!(" {}", BgpParser::prefix_to_string(p, afi == 2)));
+                                            output.push_str(&format!(
+                                                " {}",
+                                                BgpParser::prefix_to_string(p, afi == 2)
+                                            ));
                                         }
                                         output.push_str("\n");
                                     }
                                 }
 
                                 for attr in update.attributes {
-                                    let attr_name = BgpParser::attribute_type_to_name(&attr.attr_type);
+                                    let attr_name =
+                                        BgpParser::attribute_type_to_name(&attr.attr_type);
                                     if args.single_line {
                                         output.push_str(&format!("{} ", attr_name));
                                     } else {
@@ -157,39 +196,66 @@ fn process_file(filename: &str, args: &Args) -> io::Result<()> {
                                             attr.value.len()
                                         ));
                                     }
-                                    
-                                    if attr.attr_type == BgpAttributeType::Origin && attr.value.len() == 1 {
+
+                                    if attr.attr_type == BgpAttributeType::Origin
+                                        && attr.value.len() == 1
+                                    {
                                         let origin_str = BgpParser::origin_to_string(attr.value[0]);
                                         if args.single_line {
                                             output.push_str(&format!("={} ", origin_str));
                                         } else {
                                             output.push_str(&format!(" ORIGIN={}\n", origin_str));
                                         }
-                                    } else if attr.attr_type == BgpAttributeType::AsPath || attr.attr_type == BgpAttributeType::As4Path {
-                                        if let Ok(as_path) = BgpParser::decode_as_path(&attr.value, is_as4 || attr.attr_type == BgpAttributeType::As4Path) {
-                                            let as_path_str = BgpParser::as_path_to_string(&as_path);
+                                    } else if attr.attr_type == BgpAttributeType::AsPath
+                                        || attr.attr_type == BgpAttributeType::As4Path
+                                    {
+                                        if let Ok(as_path) = BgpParser::decode_as_path(
+                                            &attr.value,
+                                            is_as4 || attr.attr_type == BgpAttributeType::As4Path,
+                                        ) {
+                                            let as_path_str =
+                                                BgpParser::as_path_to_string(&as_path);
                                             if args.single_line {
                                                 output.push_str(&format!("={} ", as_path_str));
                                             } else {
-                                                output.push_str(&format!(" AS_PATH={}\n", as_path_str));
+                                                output.push_str(&format!(
+                                                    " AS_PATH={}\n",
+                                                    as_path_str
+                                                ));
                                             }
-                                        } else if !args.single_line { output.push_str("\n"); }
-                                    } else if attr.attr_type == BgpAttributeType::NextHop && attr.value.len() == 4 {
-                                        let addr = std::net::Ipv4Addr::new(attr.value[0], attr.value[1], attr.value[2], attr.value[3]);
+                                        } else if !args.single_line {
+                                            output.push_str("\n");
+                                        }
+                                    } else if attr.attr_type == BgpAttributeType::NextHop
+                                        && attr.value.len() == 4
+                                    {
+                                        let addr = std::net::Ipv4Addr::new(
+                                            attr.value[0],
+                                            attr.value[1],
+                                            attr.value[2],
+                                            attr.value[3],
+                                        );
                                         if args.single_line {
                                             output.push_str(&format!("={} ", addr));
                                         } else {
                                             output.push_str(&format!(" NEXT_HOP={}\n", addr));
                                         }
                                     } else if attr.attr_type == BgpAttributeType::Communities {
-                                        if let Ok(communities) = BgpParser::decode_communities(&attr.value) {
+                                        if let Ok(communities) =
+                                            BgpParser::decode_communities(&attr.value)
+                                        {
                                             let comm_str = communities.join(" ");
                                             if args.single_line {
                                                 output.push_str(&format!("={} ", comm_str));
                                             } else {
-                                                output.push_str(&format!(" COMMUNITIES={}\n", comm_str));
+                                                output.push_str(&format!(
+                                                    " COMMUNITIES={}\n",
+                                                    comm_str
+                                                ));
                                             }
-                                        } else if !args.single_line { output.push_str("\n"); }
+                                        } else if !args.single_line {
+                                            output.push_str("\n");
+                                        }
                                     } else if args.single_line {
                                         output.push_str(&format!("[len={}] ", attr.value.len()));
                                     } else {

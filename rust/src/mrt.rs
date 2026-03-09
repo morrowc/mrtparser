@@ -1,5 +1,5 @@
 use byteorder::{BigEndian, ReadBytesExt};
-use std::io::{self, Read, Cursor};
+use std::io::{self, Cursor, Read};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MrtType {
@@ -310,7 +310,9 @@ impl MrtRecord {
 
     pub fn subtype_to_string(mrt_type: MrtType, subtype: u16) -> String {
         match mrt_type {
-            MrtType::TableDumpV2 => format!("{:?}", TableDumpV2Subtype::from(subtype)).to_uppercase(),
+            MrtType::TableDumpV2 => {
+                format!("{:?}", TableDumpV2Subtype::from(subtype)).to_uppercase()
+            }
             MrtType::Bgp4mp | MrtType::Bgp4mpEt => {
                 format!("{:?}", Bgp4mpSubtype::from(subtype)).to_uppercase()
             }
