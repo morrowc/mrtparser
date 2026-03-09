@@ -47,6 +47,11 @@ if(ENABLE_COVERAGE)
         set(GENHTML_FLAGS "--ignore-errors" "mismatch,source")
     endif()
 
+    find_program(GCOV_PATH gcov)
+    if(GCOV_PATH)
+        set(LCOV_FLAGS ${LCOV_FLAGS} "--gcov-tool" ${GCOV_PATH})
+    endif()
+
     add_custom_target(coverage
         COMMAND lcov ${LCOV_FLAGS} --capture --directory . --output-file coverage.info
         COMMAND lcov ${LCOV_FLAGS} --remove coverage.info '/usr/*' '*/tests/*' --output-file coverage.info
