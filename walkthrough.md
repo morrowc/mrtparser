@@ -39,6 +39,7 @@ I have implemented a comprehensive C++ MRT parser that supports key RFCs (6396, 
   - **Single-line Mode:** Added the `--single-line` flag for compact, grep-friendly output.
 - **Community Normalization:** Standardized 4-byte BGP communities into the `AS:VALUE` format for improved readability.
 - **Multi-file Support:** Refactored the CLI to process multiple input files and globs in a single run.
+- **Contribution Guidelines:** Added [CONTRIBUTING.md](file:///home/morrowc/scripts/git/mrtparser/CONTRIBUTING.md) to define testing and PR standards.
 
 ## Verification Results
 
