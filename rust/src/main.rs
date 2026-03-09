@@ -117,13 +117,13 @@ fn process_file(filename: &str, args: &Args) -> io::Result<()> {
                         if bgp_header.msg_type == BgpMessageType::Update {
                             if let Ok(update) = BgpParser::parse_update(&payload, _has_add_path) {
                                 if args.single_line {
-                                    if !update.withdrawn_routes.empty() {
+                                    if !update.withdrawn_routes.is_empty() {
                                         output.push_str("Withdrawn:");
                                         for p in &update.withdrawn_routes {
                                             output.push_str(&format!(" {} ", BgpParser::prefix_to_string(p, afi == 2)));
                                         }
                                     }
-                                    if !update.nlri.empty() {
+                                    if !update.nlri.is_empty() {
                                         output.push_str("NLRI:");
                                         for p in &update.nlri {
                                             output.push_str(&format!(" {} ", BgpParser::prefix_to_string(p, afi == 2)));

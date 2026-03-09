@@ -131,7 +131,7 @@ pub struct BgpAsPath {
 pub struct BgpParser;
 
 impl BgpParser {
-    pub fn parse_update(mut data: &[u8], has_add_path: bool) -> io::Result<BgpUpdateMessage> {
+    pub fn parse_update(data: &[u8], has_add_path: bool) -> io::Result<BgpUpdateMessage> {
         let mut rdr = Cursor::new(data);
         let withdrawn_len = rdr.read_u16::<BigEndian>()?;
         let withdrawn_data = &data[2..2 + withdrawn_len as usize];
@@ -228,6 +228,17 @@ impl BgpParser {
             });
         }
         Ok(prefixes)
+    }
+
+    pub fn message_type_to_name(t: &BgpMessageType) -> String {
+        match t {
+            BgpMessageType::Open => "OPEN".to_string(),
+            BgpMessageType::Update => "UPDATE".to_string(),
+            BgpMessageType::Notification => "NOTIFICATION".to_string(),
+            BgpMessageType::Keepalive => "KEEPALIVE".to_string(),
+            BgpMessageType::RouteRefresh => "ROUTE_REFRESH".to_string(),
+            BgpMessageType::Unknown(code) => format!("UNKNOWN({})", code),
+        }
     }
 
     pub fn prefix_to_string(prefix: &BgpPrefix, is_ipv6: bool) -> String {
