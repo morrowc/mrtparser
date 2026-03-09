@@ -41,14 +41,16 @@ if(ENABLE_COVERAGE)
     execute_process(COMMAND lcov --version OUTPUT_VARIABLE LCOV_VERSION_STR)
     if(LCOV_VERSION_STR MATCHES "version 2")
         set(LCOV_FLAGS "--ignore-errors" "inconsistent,mismatch,gcov,source,graph")
+        set(GENHTML_FLAGS "--ignore-errors" "inconsistent,mismatch,source,graph")
     else()
         set(LCOV_FLAGS "--ignore-errors" "mismatch,gcov,source,graph")
+        set(GENHTML_FLAGS "--ignore-errors" "mismatch,source,graph")
     endif()
 
     add_custom_target(coverage
         COMMAND lcov ${LCOV_FLAGS} --capture --directory . --output-file coverage.info
         COMMAND lcov ${LCOV_FLAGS} --remove coverage.info '/usr/*' '*/tests/*' --output-file coverage.info
-        COMMAND genhtml ${LCOV_FLAGS} coverage.info --output-directory coverage_report
+        COMMAND genhtml ${GENHTML_FLAGS} coverage.info --output-directory coverage_report
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         COMMENT "Generating coverage report"
     )
