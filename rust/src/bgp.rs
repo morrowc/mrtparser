@@ -214,7 +214,7 @@ impl BgpParser {
             let length = data[0];
             data = &data[1..];
 
-            let bytes_to_read = (length as usize + 7) / 8;
+            let bytes_to_read = (length as usize).div_ceil(8);
             if data.len() < bytes_to_read {
                 break;
             }
@@ -244,15 +244,11 @@ impl BgpParser {
     pub fn prefix_to_string(prefix: &BgpPrefix, is_ipv6: bool) -> String {
         let full_prefix = if !is_ipv6 {
             let mut addr = [0u8; 4];
-            for i in 0..prefix.prefix.len() {
-                addr[i] = prefix.prefix[i];
-            }
+            addr[..prefix.prefix.len()].copy_from_slice(&prefix.prefix[..]);
             format!("{}", Ipv4Addr::from(addr))
         } else {
             let mut addr = [0u8; 16];
-            for i in 0..prefix.prefix.len() {
-                addr[i] = prefix.prefix[i];
-            }
+            addr[..prefix.prefix.len()].copy_from_slice(&prefix.prefix[..]);
             format!("{}", Ipv6Addr::from(addr))
         };
         format!("{}/{}", full_prefix, prefix.length)

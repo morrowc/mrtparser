@@ -117,151 +117,136 @@ fn process_file(filename: &str, args: &Args) -> io::Result<()> {
                 let ip_len = if afi == 1 { 4 } else { 16 };
                 offset += ip_len * 2;
 
-                if record.data.len() > offset {
-                    if let Ok(Some((bgp_header, payload))) =
+                if record.data.len() > offset
+                    && let Ok(Some((bgp_header, payload))) =
                         BgpParser::parse_message(&record.data[offset..])
+                {
+                    if args.single_line {
+                        output.push_str(&format!(
+                            "BGPType: {} ",
+                            BgpParser::message_type_to_name(&bgp_header.msg_type)
+                        ));
+                    } else {
+                        output.push_str(&format!(
+                            "    BGP Type: {} (Length: {})\n",
+                            BgpParser::message_type_to_name(&bgp_header.msg_type),
+                            bgp_header.length
+                        ));
+                    }
+
+                    if bgp_header.msg_type == BgpMessageType::Update
+                        && let Ok(update) = BgpParser::parse_update(&payload, _has_add_path)
                     {
                         if args.single_line {
-                            output.push_str(&format!(
-                                "BGPType: {} ",
-                                BgpParser::message_type_to_name(&bgp_header.msg_type)
-                            ));
+                            if !update.withdrawn_routes.is_empty() {
+                                output.push_str("Withdrawn:");
+                                for p in &update.withdrawn_routes {
+                                    output.push_str(&format!(
+                                        " {} ",
+                                        BgpParser::prefix_to_string(p, afi == 2)
+                                    ));
+                                }
+                            }
+                            if !update.nlri.is_empty() {
+                                output.push_str("NLRI:");
+                                for p in &update.nlri {
+                                    output.push_str(&format!(
+                                        " {} ",
+                                        BgpParser::prefix_to_string(p, afi == 2)
+                                    ));
+                                }
+                            }
                         } else {
-                            output.push_str(&format!(
-                                "    BGP Type: {} (Length: {})\n",
-                                BgpParser::message_type_to_name(&bgp_header.msg_type),
-                                bgp_header.length
-                            ));
+                            if !update.withdrawn_routes.is_empty() {
+                                output.push_str(&format!(
+                                    "      Withdrawn ({}):",
+                                    update.withdrawn_routes.len()
+                                ));
+                                for p in &update.withdrawn_routes {
+                                    output.push_str(&format!(
+                                        " {}",
+                                        BgpParser::prefix_to_string(p, afi == 2)
+                                    ));
+                                }
+                                output.push('\n');
+                            }
+                            if !update.nlri.is_empty() {
+                                output.push_str(&format!("      NLRI ({}):", update.nlri.len()));
+                                for p in &update.nlri {
+                                    output.push_str(&format!(
+                                        " {}",
+                                        BgpParser::prefix_to_string(p, afi == 2)
+                                    ));
+                                }
+                                output.push('\n');
+                            }
                         }
 
-                        if bgp_header.msg_type == BgpMessageType::Update {
-                            if let Ok(update) = BgpParser::parse_update(&payload, _has_add_path) {
+                        for attr in update.attributes {
+                            let attr_name = BgpParser::attribute_type_to_name(&attr.attr_type);
+                            if args.single_line {
+                                output.push_str(&format!("{} ", attr_name));
+                            } else {
+                                output.push_str(&format!(
+                                    "        Attribute: {} (Len: {})",
+                                    attr_name,
+                                    attr.value.len()
+                                ));
+                            }
+
+                            if attr.attr_type == BgpAttributeType::Origin && attr.value.len() == 1 {
+                                let origin_str = BgpParser::origin_to_string(attr.value[0]);
                                 if args.single_line {
-                                    if !update.withdrawn_routes.is_empty() {
-                                        output.push_str("Withdrawn:");
-                                        for p in &update.withdrawn_routes {
-                                            output.push_str(&format!(
-                                                " {} ",
-                                                BgpParser::prefix_to_string(p, afi == 2)
-                                            ));
-                                        }
-                                    }
-                                    if !update.nlri.is_empty() {
-                                        output.push_str("NLRI:");
-                                        for p in &update.nlri {
-                                            output.push_str(&format!(
-                                                " {} ",
-                                                BgpParser::prefix_to_string(p, afi == 2)
-                                            ));
-                                        }
-                                    }
+                                    output.push_str(&format!("={} ", origin_str));
                                 } else {
-                                    if !update.withdrawn_routes.is_empty() {
-                                        output.push_str(&format!(
-                                            "      Withdrawn ({}):",
-                                            update.withdrawn_routes.len()
-                                        ));
-                                        for p in &update.withdrawn_routes {
-                                            output.push_str(&format!(
-                                                " {}",
-                                                BgpParser::prefix_to_string(p, afi == 2)
-                                            ));
-                                        }
-                                        output.push_str("\n");
-                                    }
-                                    if !update.nlri.is_empty() {
-                                        output.push_str(&format!(
-                                            "      NLRI ({}):",
-                                            update.nlri.len()
-                                        ));
-                                        for p in &update.nlri {
-                                            output.push_str(&format!(
-                                                " {}",
-                                                BgpParser::prefix_to_string(p, afi == 2)
-                                            ));
-                                        }
-                                        output.push_str("\n");
-                                    }
+                                    output.push_str(&format!(" ORIGIN={}\n", origin_str));
                                 }
-
-                                for attr in update.attributes {
-                                    let attr_name =
-                                        BgpParser::attribute_type_to_name(&attr.attr_type);
+                            } else if attr.attr_type == BgpAttributeType::AsPath
+                                || attr.attr_type == BgpAttributeType::As4Path
+                            {
+                                if let Ok(as_path) = BgpParser::decode_as_path(
+                                    &attr.value,
+                                    is_as4 || attr.attr_type == BgpAttributeType::As4Path,
+                                ) {
+                                    let as_path_str = BgpParser::as_path_to_string(&as_path);
                                     if args.single_line {
-                                        output.push_str(&format!("{} ", attr_name));
+                                        output.push_str(&format!("={} ", as_path_str));
                                     } else {
-                                        output.push_str(&format!(
-                                            "        Attribute: {} (Len: {})",
-                                            attr_name,
-                                            attr.value.len()
-                                        ));
+                                        output.push_str(&format!(" AS_PATH={}\n", as_path_str));
                                     }
-
-                                    if attr.attr_type == BgpAttributeType::Origin
-                                        && attr.value.len() == 1
-                                    {
-                                        let origin_str = BgpParser::origin_to_string(attr.value[0]);
-                                        if args.single_line {
-                                            output.push_str(&format!("={} ", origin_str));
-                                        } else {
-                                            output.push_str(&format!(" ORIGIN={}\n", origin_str));
-                                        }
-                                    } else if attr.attr_type == BgpAttributeType::AsPath
-                                        || attr.attr_type == BgpAttributeType::As4Path
-                                    {
-                                        if let Ok(as_path) = BgpParser::decode_as_path(
-                                            &attr.value,
-                                            is_as4 || attr.attr_type == BgpAttributeType::As4Path,
-                                        ) {
-                                            let as_path_str =
-                                                BgpParser::as_path_to_string(&as_path);
-                                            if args.single_line {
-                                                output.push_str(&format!("={} ", as_path_str));
-                                            } else {
-                                                output.push_str(&format!(
-                                                    " AS_PATH={}\n",
-                                                    as_path_str
-                                                ));
-                                            }
-                                        } else if !args.single_line {
-                                            output.push_str("\n");
-                                        }
-                                    } else if attr.attr_type == BgpAttributeType::NextHop
-                                        && attr.value.len() == 4
-                                    {
-                                        let addr = std::net::Ipv4Addr::new(
-                                            attr.value[0],
-                                            attr.value[1],
-                                            attr.value[2],
-                                            attr.value[3],
-                                        );
-                                        if args.single_line {
-                                            output.push_str(&format!("={} ", addr));
-                                        } else {
-                                            output.push_str(&format!(" NEXT_HOP={}\n", addr));
-                                        }
-                                    } else if attr.attr_type == BgpAttributeType::Communities {
-                                        if let Ok(communities) =
-                                            BgpParser::decode_communities(&attr.value)
-                                        {
-                                            let comm_str = communities.join(" ");
-                                            if args.single_line {
-                                                output.push_str(&format!("={} ", comm_str));
-                                            } else {
-                                                output.push_str(&format!(
-                                                    " COMMUNITIES={}\n",
-                                                    comm_str
-                                                ));
-                                            }
-                                        } else if !args.single_line {
-                                            output.push_str("\n");
-                                        }
-                                    } else if args.single_line {
-                                        output.push_str(&format!("[len={}] ", attr.value.len()));
-                                    } else {
-                                        output.push_str("\n");
-                                    }
+                                } else if !args.single_line {
+                                    output.push('\n');
                                 }
+                            } else if attr.attr_type == BgpAttributeType::NextHop
+                                && attr.value.len() == 4
+                            {
+                                let addr = std::net::Ipv4Addr::new(
+                                    attr.value[0],
+                                    attr.value[1],
+                                    attr.value[2],
+                                    attr.value[3],
+                                );
+                                if args.single_line {
+                                    output.push_str(&format!("={} ", addr));
+                                } else {
+                                    output.push_str(&format!(" NEXT_HOP={}\n", addr));
+                                }
+                            } else if attr.attr_type == BgpAttributeType::Communities {
+                                if let Ok(communities) = BgpParser::decode_communities(&attr.value)
+                                {
+                                    let comm_str = communities.join(" ");
+                                    if args.single_line {
+                                        output.push_str(&format!("={} ", comm_str));
+                                    } else {
+                                        output.push_str(&format!(" COMMUNITIES={}\n", comm_str));
+                                    }
+                                } else if !args.single_line {
+                                    output.push('\n');
+                                }
+                            } else if args.single_line {
+                                output.push_str(&format!("[len={}] ", attr.value.len()));
+                            } else {
+                                output.push('\n');
                             }
                         }
                     }

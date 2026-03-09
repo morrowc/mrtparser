@@ -267,7 +267,7 @@ impl MrtRecord {
                 }
                 let sequence_number = rdr.read_u32::<BigEndian>()?;
                 let prefix_length = rdr.read_u8()?;
-                let prefix_bytes = (prefix_length as usize + 7) / 8;
+                let prefix_bytes = (prefix_length as usize).div_ceil(8);
                 let mut prefix = vec![0u8; prefix_bytes];
                 rdr.read_exact(&mut prefix)?;
 
