@@ -193,4 +193,87 @@ void MrtParser::parseTableDumpV2(MrtRecord &record) {
   }
 }
 
+std::string MrtParser::typeToString(uint16_t type) {
+  switch (static_cast<MrtType>(type)) {
+    case MrtType::OSPFv2:
+      return "OSPFv2";
+    case MrtType::TABLE_DUMP:
+      return "TABLE_DUMP";
+    case MrtType::TABLE_DUMP_V2:
+      return "TABLE_DUMP_V2";
+    case MrtType::BGP4MP:
+      return "BGP4MP";
+    case MrtType::BGP4MP_ET:
+      return "BGP4MP_ET";
+    case MrtType::ISIS:
+      return "ISIS";
+    case MrtType::ISIS_ET:
+      return "ISIS_ET";
+    case MrtType::OSPFv3:
+      return "OSPFv3";
+    case MrtType::OSPFv3_ET:
+      return "OSPFv3_ET";
+    default:
+      return "UNKNOWN(" + std::to_string(type) + ")";
+  }
+}
+
+std::string MrtParser::subtypeToString(uint16_t type, uint16_t subtype) {
+  if (type == static_cast<uint16_t>(MrtType::TABLE_DUMP_V2)) {
+    switch (static_cast<TableDumpV2Subtype>(subtype)) {
+      case TableDumpV2Subtype::PEER_INDEX_TABLE:
+        return "PEER_INDEX_TABLE";
+      case TableDumpV2Subtype::RIB_IPV4_UNICAST:
+        return "RIB_IPV4_UNICAST";
+      case TableDumpV2Subtype::RIB_IPV4_MULTICAST:
+        return "RIB_IPV4_MULTICAST";
+      case TableDumpV2Subtype::RIB_IPV6_UNICAST:
+        return "RIB_IPV6_UNICAST";
+      case TableDumpV2Subtype::RIB_IPV6_MULTICAST:
+        return "RIB_IPV6_MULTICAST";
+      case TableDumpV2Subtype::RIB_GENERIC:
+        return "RIB_GENERIC";
+      case TableDumpV2Subtype::RIB_IPV4_UNICAST_ADDPATH:
+        return "RIB_IPV4_UNICAST_ADDPATH";
+      case TableDumpV2Subtype::RIB_IPV4_MULTICAST_ADDPATH:
+        return "RIB_IPV4_MULTICAST_ADDPATH";
+      case TableDumpV2Subtype::RIB_IPV6_UNICAST_ADDPATH:
+        return "RIB_IPV6_UNICAST_ADDPATH";
+      case TableDumpV2Subtype::RIB_IPV6_MULTICAST_ADDPATH:
+        return "RIB_IPV6_MULTICAST_ADDPATH";
+      case TableDumpV2Subtype::RIB_GENERIC_ADDPATH:
+        return "RIB_GENERIC_ADDPATH";
+      default:
+        return std::to_string(subtype);
+    }
+  } else if (type == static_cast<uint16_t>(MrtType::BGP4MP) ||
+             type == static_cast<uint16_t>(MrtType::BGP4MP_ET)) {
+    switch (static_cast<Bgp4mpSubtype>(subtype)) {
+      case Bgp4mpSubtype::BGP4MP_STATE_CHANGE:
+        return "BGP4MP_STATE_CHANGE";
+      case Bgp4mpSubtype::BGP4MP_MESSAGE:
+        return "BGP4MP_MESSAGE";
+      case Bgp4mpSubtype::BGP4MP_MESSAGE_AS4:
+        return "BGP4MP_MESSAGE_AS4";
+      case Bgp4mpSubtype::BGP4MP_STATE_CHANGE_AS4:
+        return "BGP4MP_STATE_CHANGE_AS4";
+      case Bgp4mpSubtype::BGP4MP_MESSAGE_LOCAL:
+        return "BGP4MP_MESSAGE_LOCAL";
+      case Bgp4mpSubtype::BGP4MP_MESSAGE_AS4_LOCAL:
+        return "BGP4MP_MESSAGE_AS4_LOCAL";
+      case Bgp4mpSubtype::BGP4MP_MESSAGE_ADDPATH:
+        return "BGP4MP_MESSAGE_ADDPATH";
+      case Bgp4mpSubtype::BGP4MP_MESSAGE_AS4_ADDPATH:
+        return "BGP4MP_MESSAGE_AS4_ADDPATH";
+      case Bgp4mpSubtype::BGP4MP_MESSAGE_LOCAL_ADDPATH:
+        return "BGP4MP_MESSAGE_LOCAL_ADDPATH";
+      case Bgp4mpSubtype::BGP4MP_MESSAGE_AS4_LOCAL_ADDPATH:
+        return "BGP4MP_MESSAGE_AS4_LOCAL_ADDPATH";
+      default:
+        return std::to_string(subtype);
+    }
+  }
+  return std::to_string(subtype);
+}
+
 }  // namespace mrt

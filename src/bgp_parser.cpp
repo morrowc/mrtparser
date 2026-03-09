@@ -1,6 +1,7 @@
 #include "bgp_parser.h"
 #include <arpa/inet.h>
 #include <cstring>
+#include <string>
 #include <vector>
 
 namespace bgp {
@@ -86,6 +87,22 @@ bool BgpParser::parseUpdate(const uint8_t *payload, size_t size,
   return true;
 }
 
+bool BgpParser::parseOpen(const uint8_t *payload, size_t size,
+                          BgpOpenMessage &open) {
+  if (size < 10) return false;
+
+  open.version = payload[0];
+  open.my_as = ntohs(*(uint16_t *)(payload + 1));
+  open.hold_time = ntohs(*(uint16_t *)(payload + 3));
+  open.bgp_id = ntohl(*(uint32_t *)(payload + 5));
+
+  uint8_t opt_param_len = payload[9];
+  if (10 + opt_param_len > size) return false;
+
+  open.optional_parameters.assign(payload + 10, payload + 10 + opt_param_len);
+  return true;
+}
+
 bool BgpParser::parsePrefixes(const uint8_t *buffer, size_t size,
                               std::vector<BgpPrefix> &prefixes,
                               bool has_add_path) {
@@ -110,6 +127,149 @@ bool BgpParser::parsePrefixes(const uint8_t *buffer, size_t size,
     prefixes.push_back(std::move(prefix));
   }
   return true;
+}
+
+bool BgpParser::decodeAsPath(const std::vector<uint8_t> &value, bool is_as4,
+                             BgpAsPath &as_path) {
+  size_t offset = 0;
+  while (offset < value.size()) {
+    if (offset + 2 > value.size()) return false;
+    BgpAsPathSegment segment;
+    segment.type = value[offset++];
+    uint8_t count = value[offset++];
+    size_t asn_size = is_as4 ? 4 : 2;
+
+    if (offset + (count * asn_size) > value.size()) return false;
+
+    for (int i = 0; i < count; ++i) {
+      uint32_t asn;
+      if (is_as4) {
+        asn = ntohl(*(uint32_t *)(value.data() + offset));
+      } else {
+        asn = ntohs(*(uint16_t *)(value.data() + offset));
+      }
+      segment.asns.push_back(asn);
+      offset += asn_size;
+    }
+    as_path.segments.push_back(std::move(segment));
+  }
+  return true;
+}
+
+bool BgpParser::decodeMpReachNlri(const std::vector<uint8_t> &value,
+                                  BgpMpReachNlri &mp_reach, bool has_add_path) {
+  if (value.size() < 4) return false;
+  size_t offset = 0;
+  mp_reach.afi = ntohs(*(uint16_t *)(value.data() + offset));
+  offset += 2;
+  mp_reach.safi = value[offset++];
+  uint8_t nh_len = value[offset++];
+  if (offset + nh_len + 1 > value.size()) return false;
+  mp_reach.next_hop.assign(value.data() + offset,
+                           value.data() + offset + nh_len);
+  offset += nh_len;
+  offset++;  // Reserved byte
+
+  return parsePrefixes(value.data() + offset, value.size() - offset,
+                       mp_reach.nlri, has_add_path);
+}
+
+bool BgpParser::decodeMpUnreachNlri(const std::vector<uint8_t> &value,
+                                    BgpMpUnreachNlri &mp_unreach,
+                                    bool has_add_path) {
+  if (value.size() < 3) return false;
+  size_t offset = 0;
+  mp_unreach.afi = ntohs(*(uint16_t *)(value.data() + offset));
+  offset += 2;
+  mp_unreach.safi = value[offset++];
+
+  return parsePrefixes(value.data() + offset, value.size() - offset,
+                       mp_unreach.withdrawn_routes, has_add_path);
+}
+
+std::string BgpParser::originToString(uint8_t origin) {
+  switch (origin) {
+    case 0:
+      return "IGP";
+    case 1:
+      return "EGP";
+    case 2:
+      return "INCOMPLETE";
+    default:
+      return "UNKNOWN";
+  }
+}
+
+std::string BgpParser::attributeTypeToName(uint8_t type) {
+  switch (static_cast<BgpAttributeType>(type)) {
+    case BgpAttributeType::ORIGIN:
+      return "ORIGIN";
+    case BgpAttributeType::AS_PATH:
+      return "AS_PATH";
+    case BgpAttributeType::NEXT_HOP:
+      return "NEXT_HOP";
+    case BgpAttributeType::MULTI_EXIT_DISC:
+      return "MULTI_EXIT_DISC";
+    case BgpAttributeType::LOCAL_PREF:
+      return "LOCAL_PREF";
+    case BgpAttributeType::ATOMIC_AGGREGATE:
+      return "ATOMIC_AGGREGATE";
+    case BgpAttributeType::AGGREGATOR:
+      return "AGGREGATOR";
+    case BgpAttributeType::COMMUNITIES:
+      return "COMMUNITIES";
+    case BgpAttributeType::ORIGINATOR_ID:
+      return "ORIGINATOR_ID";
+    case BgpAttributeType::CLUSTER_LIST:
+      return "CLUSTER_LIST";
+    case BgpAttributeType::MP_REACH_NLRI:
+      return "MP_REACH_NLRI";
+    case BgpAttributeType::MP_UNREACH_NLRI:
+      return "MP_UNREACH_NLRI";
+    case BgpAttributeType::EXTENDED_COMMUNITIES:
+      return "EXTENDED_COMMUNITIES";
+    case BgpAttributeType::AS4_PATH:
+      return "AS4_PATH";
+    case BgpAttributeType::AS4_AGGREGATOR:
+      return "AS4_AGGREGATOR";
+    case BgpAttributeType::LARGE_COMMUNITIES:
+      return "LARGE_COMMUNITIES";
+    default:
+      return "UNKNOWN(" + std::to_string((int)type) + ")";
+  }
+}
+
+std::string BgpParser::messageTypeToName(uint8_t type) {
+  switch (static_cast<BgpMessageType>(type)) {
+    case BgpMessageType::OPEN:
+      return "OPEN";
+    case BgpMessageType::UPDATE:
+      return "UPDATE";
+    case BgpMessageType::NOTIFICATION:
+      return "NOTIFICATION";
+    case BgpMessageType::KEEPALIVE:
+      return "KEEPALIVE";
+    case BgpMessageType::ROUTE_REFRESH:
+      return "ROUTE_REFRESH";
+    default:
+      return "UNKNOWN(" + std::to_string((int)type) + ")";
+  }
+}
+
+std::string BgpParser::prefixToString(const BgpPrefix &prefix, bool is_ipv6) {
+  uint8_t addr[16] = {0};
+  size_t addr_len = is_ipv6 ? 16 : 4;
+
+  for (size_t i = 0; i < prefix.prefix.size() && i < addr_len; ++i) {
+    addr[i] = prefix.prefix[i];
+  }
+
+  char buf[INET6_ADDRSTRLEN];
+  if (inet_ntop(is_ipv6 ? AF_INET6 : AF_INET, addr, buf, sizeof(buf)) == NULL) {
+    return "invalid";
+  }
+
+  return std::string(buf) + "/" + std::to_string((int)prefix.length);
 }
 
 }  // namespace bgp

@@ -79,6 +79,29 @@ struct BgpUpdateMessage {
   std::vector<BgpPrefix> nlri;
 };
 
+struct BgpMpReachNlri {
+  uint16_t afi;
+  uint8_t safi;
+  std::vector<uint8_t> next_hop;
+  std::vector<BgpPrefix> nlri;
+};
+
+struct BgpMpUnreachNlri {
+  uint16_t afi;
+  uint8_t safi;
+  std::vector<BgpPrefix> withdrawn_routes;
+};
+
+// Decoded Attribute Structures
+struct BgpAsPathSegment {
+  uint8_t type;  // 1: AS_SET, 2: AS_SEQUENCE
+  std::vector<uint32_t> asns;
+};
+
+struct BgpAsPath {
+  std::vector<BgpAsPathSegment> segments;
+};
+
 class BgpParser {
  public:
   static bool parseMessage(const uint8_t *buffer, size_t size,
@@ -87,9 +110,26 @@ class BgpParser {
                               std::vector<BgpAttribute> &attributes);
   static bool parseUpdate(const uint8_t *payload, size_t size,
                           BgpUpdateMessage &update, bool has_add_path = false);
+  static bool parseOpen(const uint8_t *payload, size_t size,
+                        BgpOpenMessage &open);
   static bool parsePrefixes(const uint8_t *buffer, size_t size,
                             std::vector<BgpPrefix> &prefixes,
                             bool has_add_path = false);
+
+  // Attribute-specific decoders
+  static bool decodeAsPath(const std::vector<uint8_t> &value, bool is_as4,
+                           BgpAsPath &as_path);
+  static bool decodeMpReachNlri(const std::vector<uint8_t> &value,
+                                BgpMpReachNlri &mp_reach,
+                                bool has_add_path = false);
+  static bool decodeMpUnreachNlri(const std::vector<uint8_t> &value,
+                                  BgpMpUnreachNlri &mp_unreach,
+                                  bool has_add_path = false);
+  static std::string originToString(uint8_t origin);
+  static std::string attributeTypeToName(uint8_t type);
+  static std::string messageTypeToName(uint8_t type);
+  static std::string prefixToString(const BgpPrefix &prefix,
+                                    bool is_ipv6 = false);
 };
 
 }  // namespace bgp

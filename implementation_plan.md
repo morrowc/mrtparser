@@ -42,7 +42,12 @@ Command-line interface to:
 - **Google Test (gtest)**: For unit testing individual parsing functions.
 - Run against `testdata/updates.20260222.1530.bz2`.
 
-### Manual Verification
-
 - Compile with `make` and run `./mrtparser testdata/updates.20260222.1530.bz2`.
 - Verify output against RFC examples.
+
+### CLI and Output Enhancements
+
+- **UTC Timestamps:** Convert Unix timestamps to human-readable UTC strings when requested.
+- **Single-line Output:** Provide a compact mode where each MRT record is printed as a single line.
+- **IANA Mappings:** Map numeric BGP attribute types and BGP message types to their descriptive names (e.g., `NEXT_HOP`, `UPDATE`).
+- **Multi-file Support:** Process one or more files (or globs expanded by shell) provided as command-line arguments.

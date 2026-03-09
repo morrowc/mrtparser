@@ -4,14 +4,23 @@
   - [x] Understand MRT format from RFCs
   - [x] Explore workspace for context
 - [x] Define Implementation Plan
-- [x] Implement Core MRT Parser (C++) [/]
+- [x] Implement Core MRT Parser (C++)
   - [x] Header parsing
   - [x] Table Dump V2 support (RFC 6396)
-  - [ ] BGP Message support (RFC 6397) [/]
-  - [ ] BGP Additional Paths support (RFC 8050) [/]
+  - [x] BGP Message support (RFC 6397)
+  - [x] BGP Additional Paths support (RFC 8050)
 - [x] CI/CD Setup
   - [x] Add GitHub Actions for Build, Test, and Coverage
-- [ ] Verification and Testing [/]
-  - [x] Create tests with provided testdata
+- [x] CLI Enhancements
+  - [x] Add flag for UTC human-readable timestamps
+  - [x] Add flag for single-line output per record
+  - [x] Map BGP attribute numbers to names (IANA)
+  - [x] Map BGP message type numbers to names (IANA)
+  - [x] Map MRT type and subtype numbers to names (IANA)
+  - [x] Support multiple files on the command line
+- [x] Verification and Testing
+  - [x] Basic parsing verification
+  - [x] Fix compilation errors (missing includes)
+  - [x] Implement human-readable NLRI display
   - [x] Configure test coverage (lcov) and GoogleTest
-  - [ ] Validate against RFC examples
+  - [x] Expand test suite for edge cases
