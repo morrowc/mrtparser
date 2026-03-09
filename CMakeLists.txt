@@ -41,10 +41,10 @@ if(ENABLE_COVERAGE)
     execute_process(COMMAND lcov --version OUTPUT_VARIABLE LCOV_VERSION_STR)
     if(LCOV_VERSION_STR MATCHES "version 2")
         set(LCOV_FLAGS "--ignore-errors" "inconsistent,mismatch,gcov,source,graph")
-        set(GENHTML_FLAGS "--ignore-errors" "inconsistent,mismatch,source,graph")
+        set(GENHTML_FLAGS "--ignore-errors" "inconsistent,mismatch,source")
     else()
         set(LCOV_FLAGS "--ignore-errors" "mismatch,gcov,source,graph")
-        set(GENHTML_FLAGS "--ignore-errors" "mismatch,source,graph")
+        set(GENHTML_FLAGS "--ignore-errors" "mismatch,source")
     endif()
 
     add_custom_target(coverage
