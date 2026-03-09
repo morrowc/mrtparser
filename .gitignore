@@ -42,3 +42,7 @@
 
 # build artifacts
 build/*
+
+# Rust
+rust/target/
+rust/Cargo.lock

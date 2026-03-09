@@ -1,0 +1,14 @@
+[package]
+name = "mrtparser"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bzip2 = "0.4"
+flate2 = "1.0"
+byteorder = "1.5"
+clap = { version = "4.0", features = ["derive"] }
+chrono = "0.4"
+
+[dev-dependencies]
+env_logger = "0.10"
