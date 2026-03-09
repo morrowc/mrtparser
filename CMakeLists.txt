@@ -40,9 +40,9 @@ if(ENABLE_COVERAGE)
     # Check lcov version for compatibility flags
     execute_process(COMMAND lcov --version OUTPUT_VARIABLE LCOV_VERSION_STR)
     if(LCOV_VERSION_STR MATCHES "version 2")
-        set(LCOV_FLAGS "--ignore-errors" "inconsistent,gcov,source,graph")
+        set(LCOV_FLAGS "--ignore-errors" "inconsistent,mismatch,gcov,source,graph")
     else()
-        set(LCOV_FLAGS "--ignore-errors" "gcov,source,graph")
+        set(LCOV_FLAGS "--ignore-errors" "mismatch,gcov,source,graph")
     endif()
 
     add_custom_target(coverage
