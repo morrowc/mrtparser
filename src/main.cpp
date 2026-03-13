@@ -3,10 +3,114 @@
 #include <cstring>
 #include <ctime>
 #include <iostream>
+#include <nlohmann/json.hpp>
 #include <sstream>
 #include <vector>
 #include "bgp_parser.h"
 #include "mrt_parser.h"
+
+using json = nlohmann::json;
+
+namespace bgp {
+// Serialization for BGP types
+NLOHMANN_JSON_SERIALIZE_ENUM(BgpMessageType,
+                             {{BgpMessageType::OPEN, "Open"},
+                              {BgpMessageType::UPDATE, "Update"},
+                              {BgpMessageType::NOTIFICATION, "Notification"},
+                              {BgpMessageType::KEEPALIVE, "Keepalive"},
+                              {BgpMessageType::ROUTE_REFRESH, "RouteRefresh"}})
+
+NLOHMANN_JSON_SERIALIZE_ENUM(BgpAttributeType,
+                             {{BgpAttributeType::ORIGIN, "Origin"},
+                              {BgpAttributeType::AS_PATH, "AsPath"},
+                              {BgpAttributeType::NEXT_HOP, "NextHop"},
+                              {BgpAttributeType::MULTI_EXIT_DISC, "MultiExitDisc"},
+                              {BgpAttributeType::LOCAL_PREF, "LocalPref"},
+                              {BgpAttributeType::ATOMIC_AGGREGATE, "AtomicAggregate"},
+                              {BgpAttributeType::AGGREGATOR, "Aggregator"},
+                              {BgpAttributeType::COMMUNITIES, "Communities"},
+                              {BgpAttributeType::ORIGINATOR_ID, "OriginatorId"},
+                              {BgpAttributeType::CLUSTER_LIST, "ClusterList"},
+                              {BgpAttributeType::MP_REACH_NLRI, "MpReachNlri"},
+                              {BgpAttributeType::MP_UNREACH_NLRI, "MpUnreachNlri"},
+                              {BgpAttributeType::EXTENDED_COMMUNITIES, "ExtendedCommunities"},
+                              {BgpAttributeType::AS4_PATH, "As4Path"},
+                              {BgpAttributeType::AS4_AGGREGATOR, "As4Aggregator"},
+                              {BgpAttributeType::LARGE_COMMUNITIES, "LargeCommunities"}})
+
+void to_json(json &j, const BgpAttributeFlags &f) {
+  j = json{{"optional", f.optional},
+           {"transitive", f.transitive},
+           {"partial", f.partial},
+           {"extended_length", f.extended_length}};
+}
+void to_json(json &j, const BgpAttribute &a) {
+  j = json{{"flags", a.flags}, {"attr_type", a.type}, {"value", a.value}};
+}
+void to_json(json &j, const BgpPrefix &p) {
+  j = json{{"path_id", p.has_path_id ? json(p.path_id) : json(nullptr)},
+           {"length", p.length},
+           {"prefix", p.prefix}};
+}
+void to_json(json &j, const BgpUpdateMessage &m) {
+  j = json{{"withdrawn_routes", m.withdrawn_routes},
+           {"attributes", m.attributes},
+           {"nlri", m.nlri}};
+}
+}  // namespace bgp
+
+namespace mrt {
+// Serialization for MRT types
+NLOHMANN_JSON_SERIALIZE_ENUM(MrtType,
+                             {{MrtType::OSPFv2, "Ospfv2"},
+                              {MrtType::TABLE_DUMP, "TableDump"},
+                              {MrtType::TABLE_DUMP_V2, "TableDumpV2"},
+                              {MrtType::BGP4MP, "Bgp4mp"},
+                              {MrtType::BGP4MP_ET, "Bgp4mpEt"},
+                              {MrtType::ISIS, "Isis"},
+                              {MrtType::ISIS_ET, "IsisEt"},
+                              {MrtType::OSPFv3, "Ospfv3"},
+                              {MrtType::OSPFv3_ET, "Ospfv3Et"}})
+
+void to_json(json &j, const MrtHeader &h) {
+  j = json{{"timestamp", h.timestamp},
+           {"mrt_type", static_cast<MrtType>(h.type)},
+           {"subtype", h.subtype},
+           {"length", h.length}};
+}
+void to_json(json &j, const PeerEntry &e) {
+  j = json{{"peer_type", e.peer_type},
+           {"peer_bgp_id", e.peer_bgp_id},
+           {"peer_ip", e.peer_ip},
+           {"peer_as", e.peer_as}};
+}
+void to_json(json &j, const PeerIndexTable &t) {
+  j = json{{"collector_bgp_id", t.collector_bgp_id},
+           {"view_name", t.view_name},
+           {"peers", t.peers}};
+}
+void to_json(json &j, const RibEntry &e) {
+  j = json{{"peer_index", e.peer_index},
+           {"originated_time", e.originated_time},
+           {"attributes", e.attributes}};
+}
+void to_json(json &j, const RibRecord &r) {
+  j = json{{"sequence_number", r.sequence_number},
+           {"prefix_length", r.prefix_length},
+           {"prefix", r.prefix},
+           {"entries", r.entries}};
+}
+void to_json(json &j, const MrtRecord &r) {
+  j = json{{"header", r.header},
+           {"microsecond_timestamp",
+            r.has_et ? json(r.microsecond_timestamp) : json(nullptr)},
+           {"data", r.message},
+           {"peer_index_table", r.peer_index_table ? json(*r.peer_index_table)
+                                                   : json(nullptr)},
+           {"rib_record",
+            r.rib_record ? json(*r.rib_record) : json(nullptr)}};
+}
+}  // namespace mrt
 
 std::string timestampToUtc(uint32_t timestamp) {
   time_t t = static_cast<time_t>(timestamp);
@@ -19,6 +123,7 @@ std::string timestampToUtc(uint32_t timestamp) {
 int main(int argc, char *argv[]) {
   bool utc = false;
   bool singleLine = false;
+  bool jsonOutput = false;
   std::vector<std::string> filenames;
 
   for (int i = 1; i < argc; ++i) {
@@ -27,6 +132,8 @@ int main(int argc, char *argv[]) {
       utc = true;
     } else if (arg == "--single-line") {
       singleLine = true;
+    } else if (arg == "--json") {
+      jsonOutput = true;
     } else {
       filenames.push_back(arg);
     }
@@ -34,13 +141,13 @@ int main(int argc, char *argv[]) {
 
   if (filenames.empty()) {
     std::cerr << "Usage: " << argv[0]
-              << " [--utc] [--single-line] <mrt_file> [mrt_file ...]"
+              << " [--utc] [--single-line] [--json] <mrt_file> [mrt_file ...]"
               << std::endl;
     return 1;
   }
 
   for (const auto &filename : filenames) {
-    if (filenames.size() > 1) {
+    if (filenames.size() > 1 && !jsonOutput) {
       std::cout << "Processing file: " << filename << std::endl;
     }
 
@@ -50,8 +157,13 @@ int main(int argc, char *argv[]) {
     int recordCount = 0;
     while (parser.nextRecord(record)) {
       recordCount++;
-      std::stringstream ss;
 
+      if (jsonOutput) {
+        std::cout << json(record).dump() << std::endl;
+        continue;
+      }
+
+      std::stringstream ss;
       if (singleLine) {
         ss << "Record " << recordCount << ": ";
         ss << "Timestamp: "

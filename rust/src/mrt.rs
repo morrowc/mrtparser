@@ -1,7 +1,8 @@
 use byteorder::{BigEndian, ReadBytesExt};
+use serde::Serialize;
 use std::io::{self, Cursor, Read};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub enum MrtType {
     Ospfv2,
     TableDump,
@@ -32,7 +33,7 @@ impl From<u16> for MrtType {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub enum TableDumpV2Subtype {
     PeerIndexTable,
     RibIpv4Unicast,
@@ -67,7 +68,7 @@ impl From<u16> for TableDumpV2Subtype {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub enum Bgp4mpSubtype {
     StateChange,
     Message,
@@ -100,7 +101,7 @@ impl From<u16> for Bgp4mpSubtype {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct MrtHeader {
     pub timestamp: u32,
     pub mrt_type: MrtType,
@@ -108,7 +109,7 @@ pub struct MrtHeader {
     pub length: u32,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct PeerEntry {
     pub peer_type: u8,
     pub peer_bgp_id: u32,
@@ -116,21 +117,21 @@ pub struct PeerEntry {
     pub peer_as: u32,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct PeerIndexTable {
     pub collector_bgp_id: u32,
     pub view_name: String,
     pub peers: Vec<PeerEntry>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct RibEntry {
     pub peer_index: u16,
     pub originated_time: u32,
     pub attributes: Vec<crate::bgp::BgpAttribute>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct RibRecord {
     pub sequence_number: u32,
     pub prefix_length: u8,
@@ -138,7 +139,7 @@ pub struct RibRecord {
     pub entries: Vec<RibEntry>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct MrtRecord {
     pub header: MrtHeader,
     pub microsecond_timestamp: Option<u32>,

@@ -16,6 +16,9 @@ struct Args {
     #[arg(long)]
     single_line: bool,
 
+    #[arg(long)]
+    json: bool,
+
     #[arg(num_args = 1..)]
     files: Vec<String>,
 }
@@ -44,10 +47,15 @@ fn process_file(filename: &str, args: &Args) -> io::Result<()> {
     let mut buf_reader = BufReader::new(reader);
     let mut record_count = 0;
 
-    while let Some(record) = MrtRecord::parse(&mut buf_reader)? {
+    while let Some(mut record) = MrtRecord::parse(&mut buf_reader)? {
         record_count += 1;
-        let mut output = String::new();
 
+        if args.json {
+            println!("{}", serde_json::to_string(&record).unwrap());
+            continue;
+        }
+
+        let mut output = String::new();
         if args.single_line {
             output.push_str(&format!("Record {}: ", record_count));
             output.push_str(&format!(

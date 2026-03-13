@@ -1,8 +1,9 @@
 use byteorder::{BigEndian, ReadBytesExt};
+use serde::Serialize;
 use std::io::{self, Cursor};
 use std::net::{Ipv4Addr, Ipv6Addr};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub enum BgpMessageType {
     Open,
     Update,
@@ -25,7 +26,7 @@ impl From<u8> for BgpMessageType {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub enum BgpAttributeType {
     Origin,
     AsPath,
@@ -70,7 +71,7 @@ impl From<u8> for BgpAttributeType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct BgpAttributeFlags {
     pub optional: bool,
     pub transitive: bool,
@@ -89,41 +90,41 @@ impl From<u8> for BgpAttributeFlags {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct BgpAttribute {
     pub flags: BgpAttributeFlags,
     pub attr_type: BgpAttributeType,
     pub value: Vec<u8>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct BgpHeader {
     pub marker: [u8; 16],
     pub length: u16,
     pub msg_type: BgpMessageType,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct BgpPrefix {
     pub path_id: Option<u32>,
     pub length: u8,
     pub prefix: Vec<u8>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct BgpUpdateMessage {
     pub withdrawn_routes: Vec<BgpPrefix>,
     pub attributes: Vec<BgpAttribute>,
     pub nlri: Vec<BgpPrefix>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct BgpAsPathSegment {
     pub seg_type: u8, // 1: AS_SET, 2: AS_SEQUENCE
     pub asns: Vec<u32>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct BgpAsPath {
     pub segments: Vec<BgpAsPathSegment>,
 }

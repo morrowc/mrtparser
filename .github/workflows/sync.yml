@@ -1,0 +1,33 @@
+name: Cross-Language Sync
+ 
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  sync-check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install C++ Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake g++ libbz2-dev zlib1g-dev libgtest-dev
+
+    - name: Build C++
+      run: |
+        cmake -B build -DCMAKE_BUILD_TYPE=Debug
+        cmake --build build
+
+    - name: Set up Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Build Rust
+      run: cargo build
+      working-directory: rust
+
+    - name: Run Synchronization Test
+      run: python3 tests/check_sync.py

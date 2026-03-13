@@ -23,6 +23,7 @@ A Modern MRT file parser implemented in both C++ and Rust. This tool is designed
 - `zlib` (zlib development files)
 - GoogleTest (for running tests)
 - `lcov` (for generating coverage reports)
+- `nlohmann-json` (automatically fetched via CMake)
 
 ### Building
 ```bash
@@ -75,3 +76,20 @@ Both implementations support similar CLI flags:
 
 - `--utc`: View updates with human readable UTC timestamps.
 - `--single-line`: View updates as a single compact line.
+- `--json`: Output records in a standardized JSON format (used for cross-language synchronization).
+
+## Implementation Synchronization
+
+To ensure both C++ and Rust versions remain functionally identical, we use an automated synchronization test.
+
+You can run it via Python directly:
+```bash
+python3 tests/check_sync.py
+```
+
+Or via CTest if you have built the C++ version:
+```bash
+cd build && ctest -R sync_test
+```
+
+This script runs both versions against `testdata/`, compares their JSON output, and fails if any discrepancy is found.
