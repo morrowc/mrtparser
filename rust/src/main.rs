@@ -47,7 +47,7 @@ fn process_file(filename: &str, args: &Args) -> io::Result<()> {
     let mut buf_reader = BufReader::new(reader);
     let mut record_count = 0;
 
-    while let Some(mut record) = MrtRecord::parse(&mut buf_reader)? {
+    while let Some(record) = MrtRecord::parse(&mut buf_reader)? {
         record_count += 1;
 
         if args.json {
