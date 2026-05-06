@@ -19,11 +19,13 @@ A Modern MRT file parser implemented in both C++ and Rust. This tool is designed
 ### Dependencies
 - CMake 3.10+
 - A C++17 compatible compiler
-- `libbz2` (bzip2 development files)
-- `zlib` (zlib development files)
-- GoogleTest (for running tests)
-- `lcov` (for generating coverage reports)
+- `libbz2` (bzip2 development files) - libbz2-dev
+- `zlib` (zlib development files) - zlib1g-dev
+- GoogleTest (for running tests) - googletest && libgtest-dev
+- `lcov` (for generating coverage reports) - lcov
 - `nlohmann-json` (automatically fetched via CMake)
+
+libbz2-dev zlib1g-dev  lcov googletest
 
 ### Building
 ```bash
