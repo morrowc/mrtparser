@@ -13,7 +13,7 @@ struct Args {
     #[arg(long)]
     utc: bool,
 
-    #[arg(long)]
+    #[arg(long, aliases = ["singleline"])]
     single_line: bool,
 
     #[arg(long)]
@@ -292,7 +292,7 @@ fn main() {
     }
 
     for file in &args.files {
-        if args.files.len() > 1 {
+        if args.files.len() > 1 && !args.json {
             println!("Processing file: {}", file);
         }
         if let Err(e) = process_file(file, &args) {

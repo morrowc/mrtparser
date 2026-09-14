@@ -20,23 +20,24 @@ NLOHMANN_JSON_SERIALIZE_ENUM(BgpMessageType,
                               {BgpMessageType::KEEPALIVE, "Keepalive"},
                               {BgpMessageType::ROUTE_REFRESH, "RouteRefresh"}})
 
-NLOHMANN_JSON_SERIALIZE_ENUM(BgpAttributeType,
-                             {{BgpAttributeType::ORIGIN, "Origin"},
-                              {BgpAttributeType::AS_PATH, "AsPath"},
-                              {BgpAttributeType::NEXT_HOP, "NextHop"},
-                              {BgpAttributeType::MULTI_EXIT_DISC, "MultiExitDisc"},
-                              {BgpAttributeType::LOCAL_PREF, "LocalPref"},
-                              {BgpAttributeType::ATOMIC_AGGREGATE, "AtomicAggregate"},
-                              {BgpAttributeType::AGGREGATOR, "Aggregator"},
-                              {BgpAttributeType::COMMUNITIES, "Communities"},
-                              {BgpAttributeType::ORIGINATOR_ID, "OriginatorId"},
-                              {BgpAttributeType::CLUSTER_LIST, "ClusterList"},
-                              {BgpAttributeType::MP_REACH_NLRI, "MpReachNlri"},
-                              {BgpAttributeType::MP_UNREACH_NLRI, "MpUnreachNlri"},
-                              {BgpAttributeType::EXTENDED_COMMUNITIES, "ExtendedCommunities"},
-                              {BgpAttributeType::AS4_PATH, "As4Path"},
-                              {BgpAttributeType::AS4_AGGREGATOR, "As4Aggregator"},
-                              {BgpAttributeType::LARGE_COMMUNITIES, "LargeCommunities"}})
+NLOHMANN_JSON_SERIALIZE_ENUM(
+    BgpAttributeType,
+    {{BgpAttributeType::ORIGIN, "Origin"},
+     {BgpAttributeType::AS_PATH, "AsPath"},
+     {BgpAttributeType::NEXT_HOP, "NextHop"},
+     {BgpAttributeType::MULTI_EXIT_DISC, "MultiExitDisc"},
+     {BgpAttributeType::LOCAL_PREF, "LocalPref"},
+     {BgpAttributeType::ATOMIC_AGGREGATE, "AtomicAggregate"},
+     {BgpAttributeType::AGGREGATOR, "Aggregator"},
+     {BgpAttributeType::COMMUNITIES, "Communities"},
+     {BgpAttributeType::ORIGINATOR_ID, "OriginatorId"},
+     {BgpAttributeType::CLUSTER_LIST, "ClusterList"},
+     {BgpAttributeType::MP_REACH_NLRI, "MpReachNlri"},
+     {BgpAttributeType::MP_UNREACH_NLRI, "MpUnreachNlri"},
+     {BgpAttributeType::EXTENDED_COMMUNITIES, "ExtendedCommunities"},
+     {BgpAttributeType::AS4_PATH, "As4Path"},
+     {BgpAttributeType::AS4_AGGREGATOR, "As4Aggregator"},
+     {BgpAttributeType::LARGE_COMMUNITIES, "LargeCommunities"}})
 
 void to_json(json &j, const BgpAttributeFlags &f) {
   j = json{{"optional", f.optional},
@@ -61,16 +62,15 @@ void to_json(json &j, const BgpUpdateMessage &m) {
 
 namespace mrt {
 // Serialization for MRT types
-NLOHMANN_JSON_SERIALIZE_ENUM(MrtType,
-                             {{MrtType::OSPFv2, "Ospfv2"},
-                              {MrtType::TABLE_DUMP, "TableDump"},
-                              {MrtType::TABLE_DUMP_V2, "TableDumpV2"},
-                              {MrtType::BGP4MP, "Bgp4mp"},
-                              {MrtType::BGP4MP_ET, "Bgp4mpEt"},
-                              {MrtType::ISIS, "Isis"},
-                              {MrtType::ISIS_ET, "IsisEt"},
-                              {MrtType::OSPFv3, "Ospfv3"},
-                              {MrtType::OSPFv3_ET, "Ospfv3Et"}})
+NLOHMANN_JSON_SERIALIZE_ENUM(MrtType, {{MrtType::OSPFv2, "Ospfv2"},
+                                       {MrtType::TABLE_DUMP, "TableDump"},
+                                       {MrtType::TABLE_DUMP_V2, "TableDumpV2"},
+                                       {MrtType::BGP4MP, "Bgp4mp"},
+                                       {MrtType::BGP4MP_ET, "Bgp4mpEt"},
+                                       {MrtType::ISIS, "Isis"},
+                                       {MrtType::ISIS_ET, "IsisEt"},
+                                       {MrtType::OSPFv3, "Ospfv3"},
+                                       {MrtType::OSPFv3_ET, "Ospfv3Et"}})
 
 void to_json(json &j, const MrtHeader &h) {
   j = json{{"timestamp", h.timestamp},
@@ -105,10 +105,9 @@ void to_json(json &j, const MrtRecord &r) {
            {"microsecond_timestamp",
             r.has_et ? json(r.microsecond_timestamp) : json(nullptr)},
            {"data", r.message},
-           {"peer_index_table", r.peer_index_table ? json(*r.peer_index_table)
-                                                   : json(nullptr)},
-           {"rib_record",
-            r.rib_record ? json(*r.rib_record) : json(nullptr)}};
+           {"peer_index_table",
+            r.peer_index_table ? json(*r.peer_index_table) : json(nullptr)},
+           {"rib_record", r.rib_record ? json(*r.rib_record) : json(nullptr)}};
 }
 }  // namespace mrt
 
@@ -130,10 +129,21 @@ int main(int argc, char *argv[]) {
     std::string arg = argv[i];
     if (arg == "--utc") {
       utc = true;
-    } else if (arg == "--single-line") {
+    } else if (arg == "--single-line" || arg == "--singleline" || arg == "-s") {
       singleLine = true;
     } else if (arg == "--json") {
       jsonOutput = true;
+    } else if (arg == "-h" || arg == "--help") {
+      std::cout << "Usage: " << argv[0]
+                << " [--utc] [--single-line] [--json] <mrt_file> [mrt_file ...]"
+                << std::endl;
+      return 0;
+    } else if (!arg.empty() && arg[0] == '-') {
+      std::cerr << "Unknown option: " << arg << std::endl;
+      std::cerr << "Usage: " << argv[0]
+                << " [--utc] [--single-line] [--json] <mrt_file> [mrt_file ...]"
+                << std::endl;
+      return 1;
     } else {
       filenames.push_back(arg);
     }
@@ -152,6 +162,11 @@ int main(int argc, char *argv[]) {
     }
 
     mrt::MrtParser parser(filename);
+    if (!parser.isOpen()) {
+      std::cerr << "Error opening file: " << filename << std::endl;
+      continue;
+    }
+
     mrt::MrtRecord record;
 
     int recordCount = 0;

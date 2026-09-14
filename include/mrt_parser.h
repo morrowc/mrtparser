@@ -116,6 +116,7 @@ class MrtParser {
   ~MrtParser();
 
   bool nextRecord(MrtRecord &record);
+  bool isOpen() const;
   static std::string typeToString(uint16_t type);
   static std::string subtypeToString(uint16_t type, uint16_t subtype);
 

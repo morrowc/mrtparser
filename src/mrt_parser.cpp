@@ -13,16 +13,19 @@ class MrtParserImpl {
  public:
   virtual ~MrtParserImpl() = default;
   virtual size_t read(uint8_t *buffer, size_t size) = 0;
+  virtual bool isOpen() const = 0;
 };
 
 class RawMrtParserImpl : public MrtParserImpl {
  public:
-  RawMrtParserImpl(const std::string &filename)
+  explicit RawMrtParserImpl(const std::string &filename)
       : file(filename, std::ios::binary) {}
   size_t read(uint8_t *buffer, size_t size) override {
+    if (!file.is_open()) return 0;
     file.read(reinterpret_cast<char *>(buffer), size);
     return file.gcount();
   }
+  bool isOpen() const override { return file.is_open(); }
 
  private:
   std::ifstream file;
@@ -30,30 +33,68 @@ class RawMrtParserImpl : public MrtParserImpl {
 
 class Bz2MrtParserImpl : public MrtParserImpl {
  public:
-  Bz2MrtParserImpl(const std::string &filename) {
+  explicit Bz2MrtParserImpl(const std::string &filename)
+      : file(nullptr), bzFile(nullptr) {
     file = std::fopen(filename.c_str(), "rb");
-    int bzError;
-    bzFile = BZ2_bzReadOpen(&bzError, file, 0, 0, NULL, 0);
+    if (file) {
+      int bzError = 0;
+      bzFile = BZ2_bzReadOpen(&bzError, file, 0, 0, NULL, 0);
+      if (bzError != BZ_OK) {
+        std::fclose(file);
+        file = nullptr;
+        bzFile = nullptr;
+      }
+    }
   }
-  ~Bz2MrtParserImpl() {
-    int bzError;
-    BZ2_bzReadClose(&bzError, bzFile);
-    std::fclose(file);
+  ~Bz2MrtParserImpl() override {
+    if (bzFile) {
+      int bzError = 0;
+      BZ2_bzReadClose(&bzError, bzFile);
+    }
+    if (file) {
+      std::fclose(file);
+    }
   }
   size_t read(uint8_t *buffer, size_t size) override {
-    int bzError;
+    if (!bzFile) return 0;
+    int bzError = 0;
     int nread = BZ2_bzRead(&bzError, bzFile, buffer, size);
     return (bzError == BZ_OK || bzError == BZ_STREAM_END) ? nread : 0;
   }
+  bool isOpen() const override { return bzFile != nullptr; }
 
  private:
   FILE *file;
   BZFILE *bzFile;
 };
 
+class GzMrtParserImpl : public MrtParserImpl {
+ public:
+  explicit GzMrtParserImpl(const std::string &filename) : gzFile_(nullptr) {
+    gzFile_ = gzopen(filename.c_str(), "rb");
+  }
+  ~GzMrtParserImpl() override {
+    if (gzFile_) {
+      gzclose(gzFile_);
+    }
+  }
+  size_t read(uint8_t *buffer, size_t size) override {
+    if (!gzFile_) return 0;
+    int nread = gzread(gzFile_, buffer, static_cast<unsigned int>(size));
+    return nread > 0 ? static_cast<size_t>(nread) : 0;
+  }
+  bool isOpen() const override { return gzFile_ != nullptr; }
+
+ private:
+  gzFile gzFile_;
+};
+
 MrtParser::MrtParser(const std::string &filename) {
   if (filename.size() > 4 && filename.substr(filename.size() - 4) == ".bz2") {
     impl = std::make_unique<Bz2MrtParserImpl>(filename);
+  } else if (filename.size() > 3 &&
+             filename.substr(filename.size() - 3) == ".gz") {
+    impl = std::make_unique<GzMrtParserImpl>(filename);
   } else {
     impl = std::make_unique<RawMrtParserImpl>(filename);
   }
@@ -61,7 +102,10 @@ MrtParser::MrtParser(const std::string &filename) {
 
 MrtParser::~MrtParser() = default;
 
+bool MrtParser::isOpen() const { return impl && impl->isOpen(); }
+
 bool MrtParser::nextRecord(MrtRecord &record) {
+  if (!isOpen()) return false;
   uint8_t headerBuf[12];
   if (impl->read(headerBuf, 12) < 12) return false;
 
