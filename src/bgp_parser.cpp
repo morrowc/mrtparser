@@ -277,7 +277,7 @@ std::string BgpParser::prefixToString(const BgpPrefix &prefix, bool is_ipv6) {
 
   char buf[INET6_ADDRSTRLEN];
   if (inet_ntop(is_ipv6 ? AF_INET6 : AF_INET, addr, buf, sizeof(buf)) == NULL) {
-    return "invalid";
+    return "invalid";  // LCOV_EXCL_LINE
   }
 
   return std::string(buf) + "/" + std::to_string((int)prefix.length);

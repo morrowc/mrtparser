@@ -13,31 +13,31 @@ using json = nlohmann::json;
 
 namespace bgp {
 // Serialization for BGP types
-NLOHMANN_JSON_SERIALIZE_ENUM(BgpMessageType,
-                             {{BgpMessageType::OPEN, "Open"},
-                              {BgpMessageType::UPDATE, "Update"},
-                              {BgpMessageType::NOTIFICATION, "Notification"},
-                              {BgpMessageType::KEEPALIVE, "Keepalive"},
-                              {BgpMessageType::ROUTE_REFRESH, "RouteRefresh"}})
-
-NLOHMANN_JSON_SERIALIZE_ENUM(
-    BgpAttributeType,
-    {{BgpAttributeType::ORIGIN, "Origin"},
-     {BgpAttributeType::AS_PATH, "AsPath"},
-     {BgpAttributeType::NEXT_HOP, "NextHop"},
-     {BgpAttributeType::MULTI_EXIT_DISC, "MultiExitDisc"},
-     {BgpAttributeType::LOCAL_PREF, "LocalPref"},
-     {BgpAttributeType::ATOMIC_AGGREGATE, "AtomicAggregate"},
-     {BgpAttributeType::AGGREGATOR, "Aggregator"},
-     {BgpAttributeType::COMMUNITIES, "Communities"},
-     {BgpAttributeType::ORIGINATOR_ID, "OriginatorId"},
-     {BgpAttributeType::CLUSTER_LIST, "ClusterList"},
-     {BgpAttributeType::MP_REACH_NLRI, "MpReachNlri"},
-     {BgpAttributeType::MP_UNREACH_NLRI, "MpUnreachNlri"},
-     {BgpAttributeType::EXTENDED_COMMUNITIES, "ExtendedCommunities"},
-     {BgpAttributeType::AS4_PATH, "As4Path"},
-     {BgpAttributeType::AS4_AGGREGATOR, "As4Aggregator"},
-     {BgpAttributeType::LARGE_COMMUNITIES, "LargeCommunities"}})
+void to_json(json &j, const BgpAttributeType &e) {
+  constexpr std::pair<BgpAttributeType, const char *> m[] = {
+      {BgpAttributeType::ORIGIN, "Origin"},
+      {BgpAttributeType::AS_PATH, "AsPath"},
+      {BgpAttributeType::NEXT_HOP, "NextHop"},
+      {BgpAttributeType::MULTI_EXIT_DISC, "MultiExitDisc"},
+      {BgpAttributeType::LOCAL_PREF, "LocalPref"},
+      {BgpAttributeType::ATOMIC_AGGREGATE, "AtomicAggregate"},
+      {BgpAttributeType::AGGREGATOR, "Aggregator"},
+      {BgpAttributeType::COMMUNITIES, "Communities"},
+      {BgpAttributeType::ORIGINATOR_ID, "OriginatorId"},
+      {BgpAttributeType::CLUSTER_LIST, "ClusterList"},
+      {BgpAttributeType::MP_REACH_NLRI, "MpReachNlri"},
+      {BgpAttributeType::MP_UNREACH_NLRI, "MpUnreachNlri"},
+      {BgpAttributeType::EXTENDED_COMMUNITIES, "ExtendedCommunities"},
+      {BgpAttributeType::AS4_PATH, "As4Path"},
+      {BgpAttributeType::AS4_AGGREGATOR, "As4Aggregator"},
+      {BgpAttributeType::LARGE_COMMUNITIES, "LargeCommunities"}};
+  auto it =
+      std::find_if(std::begin(m), std::end(m),
+                   [e](const std::pair<BgpAttributeType, const char *> &p) {
+                     return p.first == e;
+                   });
+  j = ((it != std::end(m)) ? it : std::begin(m))->second;
+}
 
 void to_json(json &j, const BgpAttributeFlags &f) {
   j = json{{"optional", f.optional},
@@ -48,33 +48,31 @@ void to_json(json &j, const BgpAttributeFlags &f) {
 void to_json(json &j, const BgpAttribute &a) {
   j = json{{"flags", a.flags}, {"attr_type", a.type}, {"value", a.value}};
 }
-void to_json(json &j, const BgpPrefix &p) {
-  j = json{{"path_id", p.has_path_id ? json(p.path_id) : json(nullptr)},
-           {"length", p.length},
-           {"prefix", p.prefix}};
-}
-void to_json(json &j, const BgpUpdateMessage &m) {
-  j = json{{"withdrawn_routes", m.withdrawn_routes},
-           {"attributes", m.attributes},
-           {"nlri", m.nlri}};
-}
 }  // namespace bgp
 
 namespace mrt {
 // Serialization for MRT types
-NLOHMANN_JSON_SERIALIZE_ENUM(MrtType, {{MrtType::OSPFv2, "Ospfv2"},
-                                       {MrtType::TABLE_DUMP, "TableDump"},
-                                       {MrtType::TABLE_DUMP_V2, "TableDumpV2"},
-                                       {MrtType::BGP4MP, "Bgp4mp"},
-                                       {MrtType::BGP4MP_ET, "Bgp4mpEt"},
-                                       {MrtType::ISIS, "Isis"},
-                                       {MrtType::ISIS_ET, "IsisEt"},
-                                       {MrtType::OSPFv3, "Ospfv3"},
-                                       {MrtType::OSPFv3_ET, "Ospfv3Et"}})
+void to_json(json &j, const MrtType &e) {
+  constexpr std::pair<MrtType, const char *> m[] = {
+      {MrtType::OSPFv2, "Ospfv2"},
+      {MrtType::TABLE_DUMP, "TableDump"},
+      {MrtType::TABLE_DUMP_V2, "TableDumpV2"},
+      {MrtType::BGP4MP, "Bgp4mp"},
+      {MrtType::BGP4MP_ET, "Bgp4mpEt"},
+      {MrtType::ISIS, "Isis"},
+      {MrtType::ISIS_ET, "IsisEt"},
+      {MrtType::OSPFv3, "Ospfv3"},
+      {MrtType::OSPFv3_ET, "Ospfv3Et"}};
+  auto it = std::find_if(
+      std::begin(m), std::end(m),
+      [e](const std::pair<MrtType, const char *> &p) { return p.first == e; });
+  j = ((it != std::end(m)) ? it : std::begin(m))->second;
+}
 
 void to_json(json &j, const MrtHeader &h) {
+  auto mrt_type = static_cast<MrtType>(h.type);
   j = json{{"timestamp", h.timestamp},
-           {"mrt_type", static_cast<MrtType>(h.type)},
+           {"mrt_type", mrt_type},
            {"subtype", h.subtype},
            {"length", h.length}};
 }
