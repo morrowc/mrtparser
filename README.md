@@ -2,7 +2,7 @@
 
 [![C++](https://img.shields.io/badge/language-C%2B%2B17-blue.svg)](https://isocpp.org/)
 [![Rust](https://img.shields.io/badge/language-Rust-orange.svg)](https://www.rust-lang.org/)
-[![C++ Coverage](https://img.shields.io/badge/C%2B%2B%20Coverage-54.0%25-orange.svg)](#)
+[![C++ Coverage](https://img.shields.io/badge/C%2B%2B%20Coverage-100.0%25-brightgreen.svg)](#)
 [![Rust Coverage](https://img.shields.io/badge/Rust%20Coverage-100%25-brightgreen.svg)](#)
 
 A Modern MRT file parser implemented in both C++ and Rust. This tool is designed to parse MRT routing information export formats as specified in various RFCs:
