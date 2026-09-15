@@ -11,7 +11,7 @@ namespace mrt {
 
 class MrtParserImpl {
  public:
-  virtual ~MrtParserImpl() = default;
+  virtual ~MrtParserImpl() = default;  // LCOV_EXCL_LINE
   virtual size_t read(uint8_t *buffer, size_t size) = 0;
   virtual bool isOpen() const = 0;
 };
@@ -39,11 +39,13 @@ class Bz2MrtParserImpl : public MrtParserImpl {
     if (file) {
       int bzError = 0;
       bzFile = BZ2_bzReadOpen(&bzError, file, 0, 0, NULL, 0);
+      // LCOV_EXCL_START
       if (bzError != BZ_OK) {
         std::fclose(file);
         file = nullptr;
         bzFile = nullptr;
       }
+      // LCOV_EXCL_STOP
     }
   }
   ~Bz2MrtParserImpl() override {

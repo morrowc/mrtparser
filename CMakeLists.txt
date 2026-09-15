@@ -39,8 +39,17 @@ target_link_libraries(mrtparser mrtparser_lib nlohmann_json::nlohmann_json)
 # Tests
 enable_testing()
 find_package(GTest REQUIRED)
-add_executable(mrtparser_test tests/mrt_parser_test.cpp)
+add_executable(mrtparser_test
+    tests/mrt_parser_test.cpp
+    tests/bgp_parser_test.cpp
+    tests/cli_test.cpp
+)
 target_link_libraries(mrtparser_test mrtparser_lib GTest::gtest_main)
+target_compile_definitions(mrtparser_test PRIVATE
+    MRTPARSER_BIN="$<TARGET_FILE:mrtparser>"
+    TESTDATA_DIR="${CMAKE_SOURCE_DIR}/testdata"
+)
+add_dependencies(mrtparser_test mrtparser)
 add_test(NAME mrt_test COMMAND mrtparser_test)
 
 # Cross-language synchronization test
@@ -55,8 +64,8 @@ if(ENABLE_COVERAGE)
     # Check lcov version for compatibility flags
     execute_process(COMMAND lcov --version OUTPUT_VARIABLE LCOV_VERSION_STR)
     if(LCOV_VERSION_STR MATCHES "version 2")
-        set(LCOV_FLAGS "--ignore-errors" "inconsistent,mismatch,gcov,source,graph")
-        set(GENHTML_FLAGS "--ignore-errors" "inconsistent,mismatch,source")
+        set(LCOV_FLAGS "--ignore-errors" "inconsistent,mismatch,gcov,source,graph,unused")
+        set(GENHTML_FLAGS "--ignore-errors" "inconsistent,mismatch,source,unused")
     else()
         set(LCOV_FLAGS "--ignore-errors" "mismatch,gcov,source,graph")
         set(GENHTML_FLAGS "--ignore-errors" "mismatch,source")
@@ -69,7 +78,7 @@ if(ENABLE_COVERAGE)
 
     add_custom_target(coverage
         COMMAND lcov ${LCOV_FLAGS} --capture --directory . --output-file coverage.info
-        COMMAND lcov ${LCOV_FLAGS} --remove coverage.info '/usr/*' '*/tests/*' --output-file coverage.info
+        COMMAND lcov ${LCOV_FLAGS} --remove coverage.info '/usr/*' '*/tests/*' '*/_deps/*' --output-file coverage.info
         COMMAND genhtml ${GENHTML_FLAGS} coverage.info --output-directory coverage_report
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         COMMENT "Generating coverage report"
