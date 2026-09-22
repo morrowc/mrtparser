@@ -220,12 +220,13 @@ void MrtParser::parseTableDumpV2(MrtRecord &record) {
     offset += 2;
 
     for (int i = 0; i < entry_count; ++i) {
-      if (offset + 4 > size) break;
+      if (offset + 6 > size) break;
       RibEntry entry;
       entry.peer_index = ntohs(*(uint16_t *)(data + offset));
       entry.originated_time = ntohl(*(uint32_t *)(data + offset + 2));
       offset += 6;
 
+      if (offset + 2 > size) break;
       uint16_t attr_len = ntohs(*(uint16_t *)(data + offset));
       offset += 2;
 

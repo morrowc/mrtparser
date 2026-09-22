@@ -14,7 +14,7 @@ bool BgpParser::parseMessage(const uint8_t *buffer, size_t size,
   header.length = ntohs(*(uint16_t *)(buffer + 16));
   header.type = static_cast<BgpMessageType>(buffer[18]);
 
-  if (header.length > size) return false;
+  if (header.length < 19 || header.length > size) return false;
 
   payload.assign(buffer + 19, buffer + header.length);
   return true;
