@@ -135,11 +135,20 @@ impl BgpParser {
     pub fn parse_update(data: &[u8], has_add_path: bool) -> io::Result<BgpUpdateMessage> {
         let mut rdr = Cursor::new(data);
         let withdrawn_len = rdr.read_u16::<BigEndian>()?;
+        if data.len() < 2 + withdrawn_len as usize {
+            return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "Invalid withdrawn length"));
+        }
         let withdrawn_data = &data[2..2 + withdrawn_len as usize];
         let withdrawn_routes = Self::parse_prefixes(withdrawn_data, has_add_path)?;
 
         let attr_offset = 2 + withdrawn_len as usize;
+        if data.len() < attr_offset + 2 {
+            return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "Truncated attribute length"));
+        }
         let attr_len = Cursor::new(&data[attr_offset..]).read_u16::<BigEndian>()?;
+        if data.len() < attr_offset + 2 + attr_len as usize {
+            return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "Invalid attributes length"));
+        }
         let attr_data = &data[attr_offset + 2..attr_offset + 2 + attr_len as usize];
         let attributes = Self::parse_attributes(attr_data)?;
 
@@ -265,7 +274,7 @@ impl BgpParser {
         let length = rdr.read_u16::<BigEndian>()?;
         let msg_type = BgpMessageType::from(rdr.read_u8()?);
 
-        if data.len() < length as usize {
+        if length < 19 || data.len() < length as usize {
             return Ok(None);
         }
         let payload = data[19..length as usize].to_vec();
